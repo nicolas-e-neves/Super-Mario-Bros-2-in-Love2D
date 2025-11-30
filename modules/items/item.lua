@@ -68,8 +68,8 @@ function item:update(dt)
          self.bounces = 0
          self.collider:setType("static")
          
-         position.x = math.floor(position.x + 0.5)
-         position.y = math.floor(position.y + 0.5)
+         position.x = math.round(position.x)
+         position.y = math.round(position.y)
 
          self.collider:setPosition(position.x, position.y)
       end
@@ -80,6 +80,11 @@ end
 function item:draw()
    local sprite = love.graphics.newImage("sprites/tiles/items/" .. self.type .. ".png")
    local position = VECTOR.new(self.collider:getPosition())
+
+   if SETTINGS.snapping then
+      position.x = math.round(position.x)
+      position.y = math.round(position.y)
+   end
 
    love.graphics.draw(
       sprite,

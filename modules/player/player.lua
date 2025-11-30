@@ -298,7 +298,7 @@ function player.update(dt)
    
    --> Handling throwing items
    player.throwing = math.max(0, player.throwing - dt)
-   if player.heldItem and CONTROLS.isDown("run") and love.keyboard.isDown("q") then
+   if player.heldItem and CONTROLS.isDown("run", 0.1) then
       player.heldItem.collider:setType("dynamic")
       player.heldItem.collider:setLinearVelocity(0, 0)
 
@@ -310,7 +310,7 @@ function player.update(dt)
       player.throwing = 0.167
    end
 
-   --> TODO: Jump buffering and coyote time
+   --> TODO: coyote time
    local newState = states[player.state].update(player, dt)
    if newState and newState ~= player.state then
       player.state = newState
@@ -333,9 +333,16 @@ function player.draw()
       position.x = math.floor(position.x + 0.5)
    end
    --]]
+   --[
    if math.abs(velocity.y) <= 0.1 then
-      position.y = math.floor(position.y + 0.5)
+      position.y = math.round(position.y)
    end
+   --]]
+   if SETTINGS.snapping then
+      position.x = math.round(position.x)
+      position.y = math.round(position.y)
+   end
+   
 
    local palette = PALETTES.character
    if player.crouching > player.chargeTime and (30 * player.crouching) % 1 <= 0.5 then
@@ -352,13 +359,20 @@ function player.draw()
    )
    
    --> Debugging
-   --[[
    --love.graphics.rectangle("fill", player.x - player.size.width / 2, player.y - player.size.height / 2, player.size.width, player.size.height)
+   --[[
    if player.jumpDone then
       love.graphics.setColor(1,0,0,1)
       love.graphics.circle("fill", player.x, player.y - 20, 5)
       love.graphics.setColor(1,1,1,1)
    end
+   --]]
+   --[[
+   love.graphics.rectangle(
+      "fill",
+      player.x, player.y,
+      CONTROLS.actions.run.value * 16, 2
+   )
    --]]
 end
 

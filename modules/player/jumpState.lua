@@ -2,7 +2,6 @@ local JUMP = {}
 
 function JUMP.enter(player, dt)
    player.jumping = player.jumping + dt
-   player.holdingJump = true
 
    local jumpHeight = player.maxJumpHeight
    if player.crouching >= player.chargeTime then
@@ -18,11 +17,7 @@ function JUMP.update(player, dt)
    if CONTROLS.isDown("jump") then
       if player.jumping > 0 then
          player.jumping = player.jumping + dt
-      else
-         player.holdingJump = true
       end
-   else
-      player.holdingJump = false
    end
    
    if player.onGround then
@@ -31,7 +26,7 @@ function JUMP.update(player, dt)
       return "grounded"
    end
 
-   if (not player.jumpDone) and (not player.holdingJump) and (player.jumping > 0) then
+   if (not player.jumpDone) and (not CONTROLS.isDown("jump")) and (player.jumping > 0) then
       --> Cut jump short
       local velocity = VECTOR.new(player.collider:getLinearVelocity())
       local desiredVelocityY = -impulseForHeight(player.minJumpHeight)

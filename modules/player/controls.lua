@@ -25,26 +25,29 @@ CONTROLS.actions.run = {}
 CONTROLS.actions.run.value = 0
 CONTROLS.actions.run.keys  = {"lshift", "rshift", "lctrl", "rctrl", "x"}
 
---[[
-function CONTROLS.updateKey(key)
-   for control, buttonTable in pairs(CONTROLS.actions) do
-      for _, button in pairs(buttonTable) do
-         if key == button then
-            
+--[
+function CONTROLS.updateKeys(dt)
+   for control, info in pairs(CONTROLS.actions) do
+      for _, button in pairs(info.keys) do
+         if love.keyboard.isDown(button) then
+            info.value = info.value + dt
+            break
+         else
+            info.value = 0
          end
       end
    end
 end
 --]]
 
-function CONTROLS.isDown(control)
-   local buttonTable = CONTROLS.actions[control].keys
-   if not buttonTable then return false end
+function CONTROLS.isDown(control, maxTime)
+   maxTime = maxTime or math.huge
 
-   for _, button in pairs(buttonTable) do
-      if love.keyboard.isDown(button) then
-         return true
-      end
+   local action = CONTROLS.actions[control]
+   if not action then return false end
+
+   if action.value > 0 and action.value <= maxTime then
+      return true
    end
    return false
 end
