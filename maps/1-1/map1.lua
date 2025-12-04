@@ -9,12 +9,12 @@ return {
   height = 60,
   tilewidth = 16,
   tileheight = 16,
-  nextlayerid = 9,
-  nextobjectid = 11,
+  nextlayerid = 12,
+  nextobjectid = 14,
   properties = {},
   tilesets = {
     {
-      name = "Tileset1",
+      name = "Tileset",
       firstgid = 1,
       class = "",
       tilewidth = 16,
@@ -40,36 +40,6 @@ return {
       properties = {},
       wangsets = {},
       tilecount = 128,
-      tiles = {}
-    },
-    {
-      name = "Tileset",
-      firstgid = 129,
-      class = "",
-      tilewidth = 16,
-      tileheight = 16,
-      spacing = 1,
-      margin = 1,
-      columns = 73,
-      image = "../../sprites/tiles/Tilesets.png",
-      imagewidth = 1256,
-      imageheight = 474,
-      transparentcolor = "#000000",
-      objectalignment = "unspecified",
-      tilerendersize = "tile",
-      fillmode = "stretch",
-      tileoffset = {
-        x = 0,
-        y = 0
-      },
-      grid = {
-        orientation = "orthogonal",
-        width = 16,
-        height = 16
-      },
-      properties = {},
-      wangsets = {},
-      tilecount = 1971,
       tiles = {}
     }
   },
@@ -117,7 +87,24 @@ return {
           height = 32,
           rotation = 0,
           visible = true,
-          properties = {}
+          properties = {
+            ["exit"] = "1"
+          }
+        },
+        {
+          id = 11,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 224,
+          y = 896,
+          width = 16,
+          height = 32,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["exit"] = "2"
+          }
         }
       }
     },
@@ -415,7 +402,10 @@ return {
           height = 32,
           rotation = 0,
           visible = true,
-          properties = {}
+          properties = {
+            ["exit"] = "1",
+            ["map"] = "2"
+          }
         },
         {
           id = 10,
@@ -428,9 +418,57 @@ return {
           height = 32,
           rotation = 0,
           visible = true,
-          properties = {}
+          properties = {
+            ["exit"] = "1",
+            ["map"] = "1"
+          }
         }
       }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 10,
+      name = "Climbable",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {}
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 9,
+      name = "Mushrooms",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {}
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 11,
+      name = "Grass",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {}
     }
   }
 }

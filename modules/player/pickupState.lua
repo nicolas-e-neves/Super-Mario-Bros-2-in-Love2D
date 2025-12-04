@@ -9,10 +9,14 @@ function PICKUP.enter(player, dt)
    player.pickupTimer = 0.467
    
    PICKUP.item = player.targetItem
+   PICKUP.item:pickingUp()
    PICKUP.item.collider:setType("dynamic")
 
    local position = VECTOR.new(PICKUP.item.collider:getPosition())
    PICKUP.startY = position.y
+
+
+   AUDIO.pickup:play()
 end
 
 function PICKUP.update(player, dt)

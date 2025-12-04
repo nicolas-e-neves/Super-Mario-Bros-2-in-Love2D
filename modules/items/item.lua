@@ -1,7 +1,13 @@
 local item = {}
 item.__index = item
 
+local ROTATION_PERIOD = 0.5
 local MAX_BOUNCES = 1
+
+item.TYPES = {
+   grass = require("modules/items/grass"),
+   mushroomblock = require("modules/items/mushroomblock")
+}
 
 
 function item.new(type, x, y, params)
@@ -9,6 +15,9 @@ function item.new(type, x, y, params)
    params.pickedUp = false
    params.bounces = 0
    params.onGround = true
+   params.setStatic = false
+   params.bounce = false
+   params.rotation = 0
 
    --[[
    params = {
@@ -18,13 +27,25 @@ function item.new(type, x, y, params)
 
    local self = setmetatable(params, item)
    self.type = type
-   self.collider = WORLD:newRectangleCollider(x, y, 16, 16)
+   self.collider = WORLD:newRectangleCollider(x + 0.5, y, 15, 16)
    self.collider:setFixedRotation(true)
    self.collider:setCollisionClass("Item")
    self.collider:setFriction(0)
    self.collider:setMass(1)
    self.collider:setType("static")
    self.collider.parentItem = self
+   
+   local typeModule = item.TYPES[type]
+   if typeModule then
+      --[[
+      if typeModule.draw then
+         self.draw = typeModule.draw
+      end
+      --]]
+      if typeModule.postNew then
+         typeModule.postNew(self)
+      end
+   end
 
    --[[
    self.collider:setPreSolve(function(collider_1, collider_2, contact)
@@ -41,44 +62,87 @@ function item.new(type, x, y, params)
 end
 
 
-function item:update(dt)
+function item:pickingUp()
+   local typeModule = self.TYPES[self.type]
+   if typeModule and typeModule.pickingUp then
+      typeModule.pickingUp(self)
+   end
+end
+
+
+function item:thrown()
+   local typeModule = self.TYPES[self.type]
+   if typeModule and typeModule.thrown then
+      typeModule.thrown(self)
+   end
+end
+
+
+function item:groundTouched()
    if self.collider.body:getType() == "static" then return end
 
    local velocity = VECTOR.new(self.collider:getLinearVelocity())
-   if velocity.y > 0 then return end
+   if velocity.y < 0 then return end
 
    local position = VECTOR.new(self.collider:getPosition())
-   local colliderWidth = 16
-   local colliderHeight = 1
+   local colliderWidth = 10
+   local colliderHeight = 5
 
    local colliders = WORLD:queryRectangleArea(
       position.x - colliderWidth / 2,
-      position.y + 8,
+      position.y + (16 - colliderHeight) / 2,
       colliderWidth,
       colliderHeight,
       {"Solid", "SemiSolid"}
    )
    self.onGround = (#colliders > 0)
 
-   if self.onGround then
-      if self.bounces < MAX_BOUNCES then
-         self.bounces = self.bounces + 1
-         self.collider:applyLinearImpulse(0, -velocity.y - impulseForHeight(0.5))
-      else
-         self.bounces = 0
-         self.collider:setType("static")
-         
-         position.x = math.round(position.x)
-         position.y = math.round(position.y)
+   if not self.onGround then return end
 
-         self.collider:setPosition(position.x, position.y)
-      end
+   if not self.bounce and self.bounces < MAX_BOUNCES then
+      self.bounces = self.bounces + 1
+      self.bounce = true
+      self.setStatic = false
+   else
+      self.bounces = 0
+      self.bounce = false
+      self.setStatic = true
+   end
+end
+
+
+function item:update(dt)
+   if math.abs(self.rotation) > 0 then
+      self.rotation = self.rotation + dt * math.sign(self.rotation) * 2 * math.pi / ROTATION_PERIOD
+   end
+
+   if self.animation then
+      self.animation:update(dt)
+   end
+
+   if self.setStatic then
+      self.setStatic = false
+
+      local position = VECTOR.new(self.collider:getPosition())
+      position.x = math.round(position.x)
+      position.y = math.round(position.y)
+      
+      self.collider:setType("static")
+      self.collider:setPosition(position.x, position.y)
+   end
+
+   if self.bounce then
+      local velocity = VECTOR.new(self.collider:getLinearVelocity())
+
+      self.bounce = false
+      self.collider:applyForce(0, -GRAVITY)
+      self.collider:setLinearVelocity(velocity.x * 0.75, -impulseForHeight(0.25))
    end
 end
 
 
 function item:draw()
-   local sprite = love.graphics.newImage("sprites/tiles/items/" .. self.type .. ".png")
+   local sprite = self.sprite or love.graphics.newImage("sprites/tiles/items/" .. self.type .. ".png")
    local position = VECTOR.new(self.collider:getPosition())
 
    if SETTINGS.snapping then
@@ -86,13 +150,29 @@ function item:draw()
       position.y = math.round(position.y)
    end
 
-   love.graphics.draw(
-      sprite,
-      position.x, position.y,
-      0,
-      1, 1,
-      8, 8
-   )
+   if self.animation then
+      self.animation:draw(
+         sprite,
+         position.x, position.y,
+         self.rotation or 0,
+         1, 1,
+         8, 8
+      )
+   else
+      love.graphics.draw(
+         sprite,
+         position.x, position.y,
+         self.rotation or 0,
+         1, 1,
+         8, 8
+      )
+   end
+end
+
+
+function item:destroy()
+   self.collider:destroy()
+   self = nil
 end
 
 

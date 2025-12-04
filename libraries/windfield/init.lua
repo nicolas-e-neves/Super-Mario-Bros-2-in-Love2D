@@ -54,7 +54,7 @@ function World.new(wf, xg, yg, sleep)
     local settings = settings or {}
     self.wf = wf
 
-    self.draw_query_for_n_frames = 10
+    self.draw_query_for_n_frames = 1
     self.query_debug_drawing_enabled = false
     self.explicit_collision_events = false
     self.collision_classes = {}

@@ -9,6 +9,11 @@ WINDOW_X, WINDOW_Y = GAME_X * SETTINGS.scale, GAME_Y * SETTINGS.scale
 SETTINGS.fullscreen = false
 SETTINGS.snapping = false
 
+SETTINGS.world = 1
+SETTINGS.stage = 1
+SETTINGS.map = 1
+SETTINGS.exit = 1
+
 
 function math.sign(x, default)
    if x > 0 then
@@ -40,19 +45,47 @@ function impulseForHeight(height) --> in tiles
 end
 
 
+local function addColliders(layerName, collisionName)
+   
+end
+
+
+function SETTINGS.getMapString()
+   return "maps/" .. SETTINGS.world .. "-" .. SETTINGS.stage .. "/map" .. SETTINGS.map .. ".lua"
+end
+
+
 function SETTINGS.loadMap(map)
+   local map = map or SETTINGS.getMapString()
+
+   if WALLS then
+      for _, wall in pairs(WALLS.solid or {}) do
+         wall:destroy()
+      end
+      for _, wall in pairs(WALLS.semisolid or {}) do
+         wall:destroy()
+      end
+   end
+
+   for _, item in pairs(ITEMS or {}) do
+      item:destroy()
+   end
+   for _, door in pairs(DOORS or {}) do
+      door:destroy()
+   end
+
    GAME_MAP = STI(map)
 
    local mapPaletteName = GAME_MAP.layers["Palette"].properties.map
-   local characterPaletteVariant = GAME_MAP.layers["Palette"].properties.character
-   local characterPaletteName = player.character .. "_" .. characterPaletteVariant
-
    PALETTES.map = love.graphics.newImage("sprites/palettes/map/" .. mapPaletteName .. ".png") or PALETTES.map
-   PALETTES.character = love.graphics.newImage("sprites/palettes/character/" .. characterPaletteName .. ".png") or PALETTES.character
 
    ITEMS = {}
    for _, object in pairs(GAME_MAP.layers["Mushrooms"].objects) do
-      local item = ITEM.new("mushroomblock1", object.x, object.y)
+      local item = ITEM.new("mushroomblock", object.x, object.y)
+      table.insert(ITEMS, item)
+   end
+   for _, object in pairs(GAME_MAP.layers["Grass"].objects) do
+      local item = ITEM.new("grass", object.x, object.y, {content = object.properties.content})
       table.insert(ITEMS, item)
    end
 
@@ -119,14 +152,46 @@ function SETTINGS.loadMap(map)
       end
    end
 
-   if GAME_MAP.layers["Spawn"] then
-      if #GAME_MAP.layers["Spawn"].objects > 0 then
-         local object = GAME_MAP.layers["Spawn"].objects[1]
-         player.collider:setPosition(
-            object.x + object.width  / 2,
-            object.y + object.height / 2
+   if GAME_MAP.layers["Climbable"] then
+      for _, object in pairs(GAME_MAP.layers["Climbable"].objects) do
+         local width = 1.5
+         wall = WORLD:newRectangleCollider(
+            object.x + (object.width - width) / 2,
+            object.y,
+            width,
+            object.height
          )
+         wall:setType("static")
+         wall:setCollisionClass("Climbable")
+         wall:setPreSolve(function(collider_1, collider_2, contact)
+            contact:setEnabled(false)
+         end)
+
+         table.insert(WALLS.semisolid, wall)
       end
+   end
+
+   DOORS = {}
+   for _, object in pairs(GAME_MAP.layers["Doors"].objects) do
+      local door = DOOR.new(object.x, object.y, object.properties.map, object.properties.exit, object.properties.sprite or "1")
+      table.insert(DOORS, door)
+   end
+
+   if player and player.collider and GAME_MAP.layers["Spawn"] and #GAME_MAP.layers["Spawn"].objects > 0 then
+      local spawns = GAME_MAP.layers["Spawn"].objects
+      local spawn = spawns[1]
+
+      for _, object in pairs(spawns) do
+         if object.properties.exit == SETTINGS.exit then
+            spawn = object
+            break
+         end
+      end
+
+      player.collider:setPosition(
+         spawn.x + spawn.width  / 2,
+         spawn.y + spawn.height / 2
+      )
    end
 end
 
