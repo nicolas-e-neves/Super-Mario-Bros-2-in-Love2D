@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 12,
-  nextobjectid = 14,
+  nextobjectid = 16,
   properties = {},
   tilesets = {
     {
@@ -404,7 +404,8 @@ return {
           visible = true,
           properties = {
             ["exit"] = "1",
-            ["map"] = "2"
+            ["map"] = "2",
+            ["sprite"] = "1"
           }
         },
         {
@@ -420,7 +421,8 @@ return {
           visible = true,
           properties = {
             ["exit"] = "1",
-            ["map"] = "1"
+            ["map"] = "1",
+            ["sprite"] = "1"
           }
         }
       }
@@ -468,7 +470,23 @@ return {
       parallaxx = 1,
       parallaxy = 1,
       properties = {},
-      objects = {}
+      objects = {
+        {
+          id = 15,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 160,
+          y = 704,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie2"
+          }
+        }
+      }
     }
   }
 }

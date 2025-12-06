@@ -3,6 +3,7 @@ item.__index = item
 
 local ROTATION_PERIOD = 0.5
 local MAX_BOUNCES = 1
+local LIMIT_FALLING_SPEED = true
 
 item.TYPES = {
    grass = require("modules/items/grass"),
@@ -24,7 +25,7 @@ function item.new(type, x, y, params)
       disposable = true --> The item will go offscreen after thrown
    }
    ]]
-
+   
    local self = setmetatable(params, item)
    self.type = type
    self.collider = WORLD:newRectangleCollider(x + 0.5, y, 15, 16)
@@ -93,7 +94,7 @@ function item:groundTouched()
       position.y + (16 - colliderHeight) / 2,
       colliderWidth,
       colliderHeight,
-      {"Solid", "SemiSolid"}
+      {"Solid", "SemiSolid", "Item"}
    )
    self.onGround = (#colliders > 0)
 
@@ -112,6 +113,22 @@ end
 
 
 function item:update(dt)
+   if not self.collider then return end
+
+   local position = VECTOR.new(self.collider:getPosition())
+   local mapHeight = GAME_MAP.height * GAME_MAP.tileheight
+
+   if position.y > mapHeight then
+      --self:destroy()
+      return true
+   end
+
+   local velocity = VECTOR.new(self.collider:getLinearVelocity())
+   --> Limiting falling speed
+   if LIMIT_FALLING_SPEED and velocity.y > player.maxSpeeds.falling * 16 then
+      self.collider:setLinearVelocity(velocity.x, player.maxSpeeds.falling * 16)
+   end
+
    if math.abs(self.rotation) > 0 then
       self.rotation = self.rotation + dt * math.sign(self.rotation) * 2 * math.pi / ROTATION_PERIOD
    end
@@ -123,7 +140,6 @@ function item:update(dt)
    if self.setStatic then
       self.setStatic = false
 
-      local position = VECTOR.new(self.collider:getPosition())
       position.x = math.round(position.x)
       position.y = math.round(position.y)
       
@@ -132,8 +148,6 @@ function item:update(dt)
    end
 
    if self.bounce then
-      local velocity = VECTOR.new(self.collider:getLinearVelocity())
-
       self.bounce = false
       self.collider:applyForce(0, -GRAVITY)
       self.collider:setLinearVelocity(velocity.x * 0.75, -impulseForHeight(0.25))
@@ -142,8 +156,10 @@ end
 
 
 function item:draw()
-   local sprite = self.sprite or love.graphics.newImage("sprites/tiles/items/" .. self.type .. ".png")
+   if not self.collider then return end
+   
    local position = VECTOR.new(self.collider:getPosition())
+   local sprite = self.sprite or love.graphics.newImage("sprites/tiles/items/" .. self.type .. ".png")
 
    if SETTINGS.snapping then
       position.x = math.round(position.x)
@@ -171,8 +187,11 @@ end
 
 
 function item:destroy()
+   if not self.collider then return end
+   
    self.collider:destroy()
-   self = nil
+   self.collider = nil
+   ITEMS[self] = nil
 end
 
 

@@ -68,6 +68,18 @@
     <frame tileid="26" duration="133"/>
    </animation>
   </tile>
+  <tile id="67">
+   <animation>
+    <frame tileid="67" duration="600"/>
+    <frame tileid="68" duration="600"/>
+   </animation>
+  </tile>
+  <tile id="83">
+   <animation>
+    <frame tileid="83" duration="600"/>
+    <frame tileid="84" duration="600"/>
+   </animation>
+  </tile>
  </tileset>
  <objectgroup id="5" name="Palette">
   <properties>

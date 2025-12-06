@@ -34,7 +34,7 @@ end
 
 function DOOR:destroy()
    self.collider:destroy()
-   self = nil
+   self.collider = nil
 end
 
 

@@ -2,7 +2,7 @@ local player = {}
 player.x = 0
 player.y = 0
 player.spriteSize = {width = 16, height = 32}
-player.colliderSize = {width = 10, height = 32}
+player.colliderSize = {width = 10, height = 24}
 player.horizontal = 1
 player.vertical = -1
 player.palette = nil
@@ -16,16 +16,12 @@ local states = {
 }
 
 --> in tiles
-player.minJumpHeight = 1
+player.minJumpHeight = 1 + 8/16
 player.maxJumpHeight = 3 + 4/16
 player.chargedJumpHeight = 5 + 6/16
 player.chargeTime = 1
 
 player.jumpDone = false
-player.holdingJump = false
-player.jumpBufferDuration = 0.1
-player.jumpBufferTimer = 0
-
 player.jumping = 0
 player.onGround = true
 player.canClimb = false
@@ -81,8 +77,8 @@ function player.updateCollider(resetPosition)
    end
 
    player.collider = WORLD:newRectangleCollider(
-      player.x - player.colliderSize.width  / 2,
-      player.y - player.colliderSize.height / 2,
+      player.x - player.colliderSize.width / 2,
+      player.y + (32 - player.colliderSize.height) / 2,
       player.colliderSize.width,
       player.colliderSize.height
    )
@@ -93,11 +89,7 @@ function player.updateCollider(resetPosition)
    player.collider:setLinearVelocity(velocity.x, velocity.y)
 
    if resetPosition and GAME_MAP and GAME_MAP.layers["Spawn"] and #GAME_MAP.layers["Spawn"].objects > 0 then
-      local object = GAME_MAP.layers["Spawn"].objects[1]
-      player.collider:setPosition(
-         object.x + object.width  / 2,
-         object.y + object.height / 2
-      )
+      SETTINGS.findSpawn()
    end
 
    player.collider:setPreSolve(function(collider_1, collider_2, contact)
@@ -313,7 +305,7 @@ function player.update(dt)
    player.onGround = false
    player.targetItem = nil
 
-   if velocity.y <= 0 then
+   if velocity.y == 0 then
       local colliderWidth = 10
       local colliderHeight = 2
 
@@ -324,7 +316,7 @@ function player.update(dt)
          colliderHeight,
          {"Solid", "SemiSolid", "Item"}
       )
-      player.onGround = (#colliders > 0) and (velocity.y >= 0)
+      player.onGround = (#colliders > 0)
 
       for _, collider in pairs(colliders) do
          if collider.collision_class == "Item" and collider.parentItem and not collider.parentItem.pickedUp then
@@ -360,8 +352,8 @@ function player.update(dt)
 
       if CONTROLS.isDown("up", dt) and canEnterDoor then
          local door = colliders[1].parentDoor
-         SETTINGS.map = door.map
-         SETTINGS.exit = door.exit
+         SETTINGS.map = tonumber(door.map)
+         SETTINGS.exit = tonumber(door.exit)
          SETTINGS.loadMap()
       end
 
@@ -389,8 +381,8 @@ function player.update(dt)
       player.heldItem.collider:setType("dynamic")
       player.heldItem.collider:setLinearVelocity(0, 0)
 
-      local throwImpulse = 304
-      player.heldItem.collider:applyLinearImpulse(throwImpulse * player.horizontal + velocity.x, 0) --> TODO: calculate impulse for throwing
+      local throwImpulse = 352 --> CHANGE THIS LATER
+      player.heldItem.collider:applyLinearImpulse(throwImpulse * player.horizontal + velocity.x, velocity.y) --> TODO: calculate impulse for throwing
       
       player.heldItem.pickedUp = false
       player.heldItem.bounces = 0
@@ -445,8 +437,9 @@ function player.draw()
       position.x, position.y,
       nil,
       player.horizontal, 1,
-      player.spriteSize.width / 2, player.spriteSize.height / 2
+      player.spriteSize.width / 2, 32 - player.colliderSize.height / 2
    )
+   SHADERS.pixelate:send("palette", PALETTES.map)
    
    --> Debugging
    --love.graphics.rectangle("fill", player.x - player.size.width / 2, player.y - player.size.height / 2, player.size.width, player.size.height)
@@ -468,6 +461,31 @@ function player.draw()
    love.graphics.setColor(1, 1, 1)
    --]]
    --love.graphics.print(player.animationState,player.x,player.y,0,1,1,player.colliderSize.width/2,player.colliderSize.height)
+
+   --> Show the value of pickedUp if the player is holding an item
+   --[[
+   if player.heldItem then
+      love.graphics.print(
+         tostring(player.heldItem.pickedUp),
+         player.x - 8, player.y - player.colliderSize.height / 2 - 26
+      )
+   end
+   --]]
+
+   --> Draw a circle where the heldItem is supposed to be
+   --[[
+   if player.heldItem then
+      local offset = (player.crouching <= 0) and -18 or -4
+      love.graphics.setColor(1, 1, 0, 0.5)
+      love.graphics.circle(
+         "fill",
+         player.x,
+         player.y + offset,
+         6
+      )
+      love.graphics.setColor(1, 1, 1, 1)
+   end
+   --]]
 end
 
 

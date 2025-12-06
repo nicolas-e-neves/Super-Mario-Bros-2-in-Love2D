@@ -11,7 +11,7 @@ SETTINGS.snapping = false
 
 SETTINGS.world = 1
 SETTINGS.stage = 1
-SETTINGS.map = 1
+SETTINGS.map = 2
 SETTINGS.exit = 1
 
 
@@ -45,13 +45,26 @@ function impulseForHeight(height) --> in tiles
 end
 
 
-local function addColliders(layerName, collisionName)
-   
+function SETTINGS.getMapString()
+   return "maps/" .. SETTINGS.world .. "-" .. SETTINGS.stage .. "/map" .. SETTINGS.map .. ".lua"
 end
 
 
-function SETTINGS.getMapString()
-   return "maps/" .. SETTINGS.world .. "-" .. SETTINGS.stage .. "/map" .. SETTINGS.map .. ".lua"
+function SETTINGS.findSpawn()
+   local spawns = GAME_MAP.layers["Spawn"].objects
+   local spawn = spawns[1]
+   
+   for _, object in ipairs(spawns) do
+      if tonumber(object.properties.exit) == tonumber(SETTINGS.exit) then
+         spawn = object
+         break
+      end
+   end
+
+   player.collider:setPosition(
+      spawn.x + spawn.width / 2,
+      spawn.y + (spawn.height + 32 - player.colliderSize.height) / 2
+   )
 end
 
 
@@ -65,10 +78,16 @@ function SETTINGS.loadMap(map)
       for _, wall in pairs(WALLS.semisolid or {}) do
          wall:destroy()
       end
+   else
+      WALLS = {}
    end
+   WALLS.solid = {}
+   WALLS.semisolid = {}
 
    for _, item in pairs(ITEMS or {}) do
-      item:destroy()
+      if not item.pickedUp then
+         item:destroy()
+      end
    end
    for _, door in pairs(DOORS or {}) do
       door:destroy()
@@ -79,7 +98,9 @@ function SETTINGS.loadMap(map)
    local mapPaletteName = GAME_MAP.layers["Palette"].properties.map
    PALETTES.map = love.graphics.newImage("sprites/palettes/map/" .. mapPaletteName .. ".png") or PALETTES.map
 
-   ITEMS = {}
+   if not ITEMS then
+      ITEMS = {}
+   end
    for _, object in pairs(GAME_MAP.layers["Mushrooms"].objects) do
       local item = ITEM.new("mushroomblock", object.x, object.y)
       table.insert(ITEMS, item)
@@ -88,10 +109,6 @@ function SETTINGS.loadMap(map)
       local item = ITEM.new("grass", object.x, object.y, {content = object.properties.content})
       table.insert(ITEMS, item)
    end
-
-   WALLS = {}
-   WALLS.solid = {}
-   WALLS.semisolid = {}
 
    --> Add walls around the map
    local wall = WORLD:newRectangleCollider(
@@ -178,20 +195,7 @@ function SETTINGS.loadMap(map)
    end
 
    if player and player.collider and GAME_MAP.layers["Spawn"] and #GAME_MAP.layers["Spawn"].objects > 0 then
-      local spawns = GAME_MAP.layers["Spawn"].objects
-      local spawn = spawns[1]
-
-      for _, object in pairs(spawns) do
-         if object.properties.exit == SETTINGS.exit then
-            spawn = object
-            break
-         end
-      end
-
-      player.collider:setPosition(
-         spawn.x + spawn.width  / 2,
-         spawn.y + spawn.height / 2
-      )
+      SETTINGS.findSpawn()
    end
 end
 

@@ -11,9 +11,10 @@ function PICKUP.enter(player, dt)
    PICKUP.item = player.targetItem
    PICKUP.item:pickingUp()
    PICKUP.item.collider:setType("dynamic")
+   PICKUP.item.pickedUp = true
 
-   local position = VECTOR.new(PICKUP.item.collider:getPosition())
-   PICKUP.startY = position.y
+   local position = VECTOR.new(player.collider:getPosition())
+   PICKUP.startY = position.y + player.colliderSize.height / 2 + 8
 
 
    AUDIO.pickup:play()
@@ -33,7 +34,7 @@ function PICKUP.update(player, dt)
 
    if player.pickupTimer <= 0 then
       player.heldItem = PICKUP.item
-      player.heldItem.pickedUp = true
+      --player.heldItem.pickedUp = true
       player.targetItem = nil
       PICKUP.item = nil
 

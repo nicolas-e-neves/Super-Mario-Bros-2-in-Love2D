@@ -9,8 +9,8 @@ return {
   height = 14,
   tilewidth = 16,
   tileheight = 16,
-  nextlayerid = 15,
-  nextobjectid = 55,
+  nextlayerid = 16,
+  nextobjectid = 78,
   properties = {},
   tilesets = {
     {
@@ -38,7 +38,51 @@ return {
         height = 16
       },
       properties = {},
-      wangsets = {},
+      wangsets = {
+        {
+          name = "Semisolid1",
+          class = "",
+          tile = 2,
+          wangsettype = "corner",
+          properties = {},
+          colors = {
+            {
+              color = { 255, 0, 0 },
+              name = "",
+              class = "",
+              probability = 1,
+              tile = -1,
+              properties = {}
+            }
+          },
+          wangtiles = {
+            {
+              wangid = { 0, 0, 0, 1, 0, 0, 0, 0 },
+              tileid = 1
+            },
+            {
+              wangid = { 0, 0, 0, 1, 0, 1, 0, 0 },
+              tileid = 2
+            },
+            {
+              wangid = { 0, 0, 0, 0, 0, 1, 0, 0 },
+              tileid = 3
+            },
+            {
+              wangid = { 0, 1, 0, 1, 0, 0, 0, 0 },
+              tileid = 17
+            },
+            {
+              wangid = { 0, 1, 0, 1, 0, 1, 0, 1 },
+              tileid = 18
+            },
+            {
+              wangid = { 0, 0, 0, 0, 0, 1, 0, 1 },
+              tileid = 19
+            }
+          }
+        }
+      },
       tilecount = 128,
       tiles = {}
     },
@@ -253,6 +297,32 @@ return {
             {
               tileid = 26,
               duration = 133
+            }
+          }
+        },
+        {
+          id = 67,
+          animation = {
+            {
+              tileid = 67,
+              duration = 600
+            },
+            {
+              tileid = 68,
+              duration = 600
+            }
+          }
+        },
+        {
+          id = 83,
+          animation = {
+            {
+              tileid = 83,
+              duration = 600
+            },
+            {
+              tileid = 84,
+              duration = 600
             }
           }
         }
@@ -944,6 +1014,87 @@ return {
     {
       type = "objectgroup",
       draworder = "topdown",
+      id = 15,
+      name = "Cherries",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 56,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 560,
+          y = 96,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 57,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 752,
+          y = 112,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 58,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1504,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 59,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1696,
+          y = 128,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 61,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1616,
+          y = 128,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
       id = 6,
       name = "Grass",
       class = "",
@@ -1082,6 +1233,246 @@ return {
           shape = "rectangle",
           x = 768,
           y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 62,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1616,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie2"
+          }
+        },
+        {
+          id = 63,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1696,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 64,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1712,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 65,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1536,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = ""
+          }
+        },
+        {
+          id = 66,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1504,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = ""
+          }
+        },
+        {
+          id = 67,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1744,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie2"
+          }
+        },
+        {
+          id = 68,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1776,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 69,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1792,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 70,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2272,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = ""
+          }
+        },
+        {
+          id = 71,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2304,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie2"
+          }
+        },
+        {
+          id = 72,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2320,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie2"
+          }
+        },
+        {
+          id = 73,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2496,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 74,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2480,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 75,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2464,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 76,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2448,
+          y = 64,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["content"] = "veggie1"
+          }
+        },
+        {
+          id = 77,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 2432,
+          y = 64,
           width = 16,
           height = 16,
           rotation = 0,

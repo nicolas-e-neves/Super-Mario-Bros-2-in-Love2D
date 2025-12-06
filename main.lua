@@ -29,8 +29,8 @@ function love.load()
    PALETTES = {}
    PALETTES.charge = love.graphics.newImage("sprites/palettes/character/charge.png")
 
-   SETTINGS.loadMap()
    player = require("modules/player/player")
+   SETTINGS.loadMap()
    player.setCharacter("mario", true)
 
    SPRITES = {}
@@ -61,7 +61,7 @@ function love.update(dt)
    
    --> TEMPORARY
    if player.heldItem and player.heldItem.collider then
-      local offset = (player.crouching <= 0) and -14 or -4
+      local offset = (player.crouching <= 0) and -18 or -4
       player.heldItem.collider:setPosition(player.x, player.y + offset)
    end
 
@@ -95,7 +95,6 @@ function love.draw()
       end
 
       player.draw()
-      SHADERS.pixelate:send("palette", PALETTES.map)
 
       for _, item in pairs(ITEMS) do
          item:draw()
@@ -112,6 +111,7 @@ function love.keypressed(key)
       love.window.setFullscreen(SETTINGS.fullscreen)
    end
 
+   --> Debugging keys
    if key == "1" then
       player.setCharacter("mario")
    end

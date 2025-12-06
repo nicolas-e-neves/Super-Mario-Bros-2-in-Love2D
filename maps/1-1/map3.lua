@@ -256,6 +256,32 @@ return {
               duration = 133
             }
           }
+        },
+        {
+          id = 67,
+          animation = {
+            {
+              tileid = 67,
+              duration = 600
+            },
+            {
+              tileid = 68,
+              duration = 600
+            }
+          }
+        },
+        {
+          id = 83,
+          animation = {
+            {
+              tileid = 83,
+              duration = 600
+            },
+            {
+              tileid = 84,
+              duration = 600
+            }
+          }
         }
       }
     }
