@@ -14,6 +14,7 @@ end
 function CLIMB.update(player, dt)
    local joystick = CONTROLS.getJoystick()
    local lastDirection = math.sign(joystick.x, lastDirection)
+   local position = VECTOR.new(player.collider:getPosition())
 
    if not player.canClimb then
       player.horizontal = math.sign(lastDirection, player.horizontal)
@@ -27,8 +28,8 @@ function CLIMB.update(player, dt)
    elseif joystick.y < 0 then
       --> Stop if there's nothing to climb above
       local colliders = WORLD:queryRectangleArea(
-         player.x - player.colliderSize.width  / 2,
-         player.y - player.colliderSize.height / 2 - SEARCH_HEIGHT,
+         position.x - player.colliderSize.width  / 2,
+         position.y - player.colliderSize.height / 2 - SEARCH_HEIGHT,
          player.colliderSize.width,
          SEARCH_HEIGHT,
          {"Climbable"}

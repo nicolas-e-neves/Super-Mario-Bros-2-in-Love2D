@@ -69,7 +69,7 @@ function player.updateCollider(resetPosition)
    if player.collider then
       local position = VECTOR.new(player.collider:getPosition())
       player.x = position.x
-      player.y = position.y
+      player.y = position.y + player.colliderSize.height / 2
       velocity = VECTOR.new(player.collider:getLinearVelocity())
       
       player.collider:destroy()
@@ -78,7 +78,7 @@ function player.updateCollider(resetPosition)
 
    player.collider = WORLD:newRectangleCollider(
       player.x - player.colliderSize.width / 2,
-      player.y + (32 - player.colliderSize.height) / 2,
+      player.y - player.colliderSize.height,
       player.colliderSize.width,
       player.colliderSize.height
    )
@@ -237,6 +237,9 @@ function decideAnimationState()
       local velocity = VECTOR.new(player.collider:getLinearVelocity())
 
       if math.abs(velocity.x) > 0 then
+         if player.animationState == "idle" then
+            player.animations["walk" .. pickup][player.powerup]:gotoFrame(2)
+         end
          return "walk" .. pickup
       else
          return "idle" .. pickup
@@ -282,6 +285,12 @@ function player.update(dt)
    --> Handling movement
    local joystick = CONTROLS.getJoystick()
    local velocity = VECTOR.new(player.collider:getLinearVelocity())
+   local position = VECTOR.new(player.collider:getPosition())
+
+   --[[
+   IMPORTANT NOTE: player.collider:getPosition() returns the CENTER of the collider.
+   So, to get the player's y position (feet position), use player.y
+   --]]
    
    if player.pickupTimer <= 0 and player.state ~= "climb" then
       player.horizontal = math.sign(joystick.x, player.horizontal)
@@ -303,34 +312,46 @@ function player.update(dt)
 
    --> Detecting colliders
    player.onGround = false
-   player.targetItem = nil
 
-   if velocity.y == 0 then
+   if velocity.y == 0 and player.pickupTimer <= 0 then
       local colliderWidth = 10
       local colliderHeight = 2
 
       local colliders = WORLD:queryRectangleArea(
-         player.x - colliderWidth / 2,
-         player.y + (player.colliderSize.height - colliderHeight) / 2,
+         position.x - colliderWidth / 2,
+         position.y + (player.colliderSize.height - colliderHeight) / 2,
          colliderWidth,
          colliderHeight,
          {"Solid", "SemiSolid", "Item"}
       )
-      player.onGround = (#colliders > 0)
+      
+      local numOfDisabledColliders = 0
+      player.targetItem = nil
 
-      for _, collider in pairs(colliders) do
-         if collider.collision_class == "Item" and collider.parentItem and not collider.parentItem.pickedUp then
+      for index, collider in pairs(colliders) do
+         if collider.collision_class ~= "Item" then goto continue end
+
+         if collider.collisionOff then 
+            numOfDisabledColliders = numOfDisabledColliders + 1
+         end
+
+         if collider.parentItem and not collider.parentItem.pickedUp then
+            --> Found an item to pick up
             player.targetItem = collider.parentItem
             break
          end
+
+         ::continue::
       end
+
+      player.onGround = (#colliders > numOfDisabledColliders)
    end
 
    player.canClimb = false
    if not player.heldItem then
       local colliders = WORLD:queryRectangleArea(
-         player.x - player.colliderSize.width  / 2,
-         player.y - player.colliderSize.height / 2,
+         position.x - player.colliderSize.width  / 2,
+         position.y - player.colliderSize.height / 2,
          player.colliderSize.width,
          player.colliderSize.height / 2,
          {"Climbable"}
@@ -342,8 +363,8 @@ function player.update(dt)
    local canEnterDoor = false
    if player.onGround then
       local colliders = WORLD:queryRectangleArea(
-         player.x - player.colliderSize.width  / 2,
-         player.y - player.colliderSize.height / 2,
+         position.x - player.colliderSize.width  / 2,
+         position.y - player.colliderSize.height / 2,
          player.colliderSize.width,
          player.colliderSize.height,
          {"Door"}
@@ -381,8 +402,13 @@ function player.update(dt)
       player.heldItem.collider:setType("dynamic")
       player.heldItem.collider:setLinearVelocity(0, 0)
 
-      local throwImpulse = 352 --> CHANGE THIS LATER
-      player.heldItem.collider:applyLinearImpulse(throwImpulse * player.horizontal + velocity.x, velocity.y) --> TODO: calculate impulse for throwing
+      if (not player.heldItem.droppable) or (math.abs(velocity.x) > 0 or math.abs(velocity.y) > 0) then
+         local throwImpulse = 352 --> CHANGE THIS LATER
+         player.heldItem.collider:applyLinearImpulse(throwImpulse * player.horizontal + velocity.x, velocity.y) --> TODO: calculate impulse for throwing
+      else
+         local itemPosition = VECTOR.new(player.heldItem.collider:getPosition())
+         player.heldItem.collider:setPosition(itemPosition.x + 16 * player.horizontal, itemPosition.y)
+      end
       
       player.heldItem.pickedUp = false
       player.heldItem.bounces = 0
@@ -405,26 +431,18 @@ end
 
 
 function player.draw()
-   --love.graphics.setColor(0,0.5,1,1)
-   
-   local position = VECTOR.new(player.collider:getPosition())
+   --local position = VECTOR.new(player.collider:getPosition())
    local velocity = VECTOR.new(player.collider:getLinearVelocity())
 
-   --[[
-   if math.abs(velocity.x) <= 0.1 then
-      position.x = math.floor(position.x + 0.5)
-   end
-   --]]
-   --[
    if math.abs(velocity.y) <= 0.1 then
-      position.y = math.round(position.y)
-   end
-   --]]
-   if SETTINGS.snapping then
-      position.x = math.round(position.x)
-      position.y = math.round(position.y)
+      player.y = math.round(player.y)
    end
    
+   if SETTINGS.snapping then
+      player.x = math.round(player.x)
+      player.y = math.round(player.y)
+   end
+
 
    local palette = player.palette or PALETTES.charge
    if player.crouching > player.chargeTime and (30 * player.crouching) % 1 <= 0.5 then
@@ -434,13 +452,26 @@ function player.draw()
    SHADERS.pixelate:send("palette", palette)
    player.animations[player.animationState][player.powerup]:draw(
       player.sprite,
-      position.x, position.y,
+      player.x, player.y,
       nil,
       player.horizontal, 1,
-      player.spriteSize.width / 2, 32 - player.colliderSize.height / 2
+      player.spriteSize.width / 2, player.spriteSize.height
    )
    SHADERS.pixelate:send("palette", PALETTES.map)
+
+
+   --> Draw held item if there is one
+   if player.heldItem then
+      player.heldItem:draw()
+   else
+      --> Draw target item if there is one and it's being picked up
+      if player.targetItem and player.targetItem.pickedUp then
+         player.targetItem:draw()
+      end
+   end
    
+
+
    --> Debugging
    --love.graphics.rectangle("fill", player.x - player.size.width / 2, player.y - player.size.height / 2, player.size.width, player.size.height)
    --[[
@@ -462,14 +493,12 @@ function player.draw()
    --]]
    --love.graphics.print(player.animationState,player.x,player.y,0,1,1,player.colliderSize.width/2,player.colliderSize.height)
 
-   --> Show the value of pickedUp if the player is holding an item
+   --> Show the value of something
    --[[
-   if player.heldItem then
-      love.graphics.print(
-         tostring(player.heldItem.pickedUp),
-         player.x - 8, player.y - player.colliderSize.height / 2 - 26
-      )
-   end
+   love.graphics.print(
+      tostring(player.onGround),
+      player.x - 8, player.y - player.colliderSize.height / 2 - 26
+   )
    --]]
 
    --> Draw a circle where the heldItem is supposed to be

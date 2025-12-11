@@ -49,20 +49,23 @@ function love.update(dt)
    WINDOW_X, WINDOW_Y = love.window.getMode()
    GAME_X, GAME_Y = WINDOW_X / SETTINGS.scale, WINDOW_Y / SETTINGS.scale
 
+   CONTROLS.updateKeys(dt)
+
+   --> Update world and player
    for _, item in pairs(ITEMS) do
       item:update(dt)
    end
 
-   CONTROLS.updateKeys(dt)
    GAME_MAP:update(dt)
    player.update(dt)
    WORLD:update(dt)
    player.x, player.y = player.collider:getPosition()
+   player.y = player.y + player.colliderSize.height / 2
    
    --> TEMPORARY
    if player.heldItem and player.heldItem.collider then
-      local offset = (player.crouching <= 0) and -18 or -4
-      player.heldItem.collider:setPosition(player.x, player.y + offset)
+      local offset = (player.crouching <= 0) and 29 or 20
+      player.heldItem.collider:setPosition(player.x, player.y - offset)
    end
 
    CAMERA:lookAt(player.x, player.y)
@@ -94,11 +97,13 @@ function love.draw()
          door:draw()
       end
 
-      player.draw()
-
       for _, item in pairs(ITEMS) do
+         if item.pickedUp then goto continue end
          item:draw()
+         ::continue::
       end
+
+      player.draw()
 
       --WORLD:draw()
    CAMERA:detach()
