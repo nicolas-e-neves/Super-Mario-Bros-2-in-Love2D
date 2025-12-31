@@ -9,8 +9,8 @@ return {
   height = 60,
   tilewidth = 16,
   tileheight = 16,
-  nextlayerid = 16,
-  nextobjectid = 105,
+  nextlayerid = 17,
+  nextobjectid = 108,
   properties = {},
   tilesets = {
     {
@@ -323,14 +323,29 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 48,
-          y = 896,
+          x = 32,
+          y = 944,
           width = 16,
-          height = 32,
+          height = 16,
           rotation = 0,
           visible = true,
           properties = {
             ["exit"] = "1"
+          }
+        },
+        {
+          id = 107,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 112,
+          y = 0,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["exit"] = 2
           }
         }
       }
@@ -836,7 +851,7 @@ return {
           x = 32,
           y = 896,
           width = 16,
-          height = 64,
+          height = 80,
           rotation = 0,
           visible = true,
           properties = {}
@@ -899,12 +914,60 @@ return {
           type = "",
           shape = "rectangle",
           x = 112,
-          y = 0,
+          y = -16,
           width = 16,
-          height = 112,
+          height = 128,
           rotation = 0,
           visible = true,
           properties = {}
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 16,
+      name = "ClimbableExit",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 105,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 32,
+          y = 960,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["exit"] = 4,
+            ["map"] = 2
+          }
+        },
+        {
+          id = 106,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 112,
+          y = -16,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["exit"] = 1,
+            ["map"] = 5
+          }
         }
       }
     },

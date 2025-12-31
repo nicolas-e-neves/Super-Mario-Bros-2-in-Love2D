@@ -3,16 +3,16 @@ local SETTINGS = {}
 --> NES screen resolution (PAL): 256x224
 GAME_X, GAME_Y = 256, 224
 
-SETTINGS.scale = 3
+SETTINGS.scale = 4
 WINDOW_X, WINDOW_Y = GAME_X * SETTINGS.scale, GAME_Y * SETTINGS.scale
 
-SETTINGS.fullscreen = false
+SETTINGS.fullscreen = true
 SETTINGS.snapping = false
 
 SETTINGS.world = 1
 SETTINGS.stage = 1
-SETTINGS.map = 2
-SETTINGS.exit = 1
+SETTINGS.map   = 1
+SETTINGS.exit  = 1
 
 
 function math.sign(x, default)
@@ -72,17 +72,20 @@ function SETTINGS.loadMap(map)
    local map = map or SETTINGS.getMapString()
 
    if WALLS then
-      for _, wall in pairs(WALLS.solid or {}) do
-         wall:destroy()
-      end
-      for _, wall in pairs(WALLS.semisolid or {}) do
-         wall:destroy()
+      for _, class in pairs(WALLS) do
+         if not class then goto continue end
+         for _, wall in pairs(class) do
+            wall:destroy()
+         end
+         ::continue::
       end
    else
       WALLS = {}
    end
    WALLS.solid = {}
    WALLS.semisolid = {}
+   WALLS.climbable = {}
+   WALLS.exit = {}
 
    for _, item in pairs(ITEMS or {}) do
       if not item.pickedUp then
@@ -184,7 +187,30 @@ function SETTINGS.loadMap(map)
             contact:setEnabled(false)
          end)
 
-         table.insert(WALLS.semisolid, wall)
+         table.insert(WALLS.climbable, wall)
+      end
+   end
+
+   if GAME_MAP.layers["ClimbableExit"] then
+      for _, object in pairs(GAME_MAP.layers["ClimbableExit"].objects) do
+         local width = 3
+         wall = WORLD:newRectangleCollider(
+            object.x + (object.width - width) / 2,
+            object.y,
+            width,
+            object.height
+         )
+
+         wall.map = object.properties.map
+         wall.exit = object.properties.exit
+         
+         wall:setType("static")
+         wall:setCollisionClass("ClimbableExit")
+         wall:setPreSolve(function(collider_1, collider_2, contact)
+            contact:setEnabled(false)
+         end)
+
+         table.insert(WALLS.exit, wall)
       end
    end
 

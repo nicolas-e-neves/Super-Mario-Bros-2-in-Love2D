@@ -20,6 +20,7 @@ function love.load()
    WORLD:addCollisionClass("Item")
    WORLD:addCollisionClass("Climbable")
    WORLD:addCollisionClass("Door")
+   WORLD:addCollisionClass("ClimbableExit")
 
    love.window.setTitle("Platformer")
    love.window.setMode(WINDOW_X, WINDOW_Y, {fullscreen = SETTINGS.fullscreen, resizable = true})
@@ -68,7 +69,7 @@ function love.update(dt)
       player.heldItem.collider:setPosition(player.x, player.y - offset)
    end
 
-   CAMERA:lookAt(player.x, player.y)
+   CAMERA:lookAt(player.x, player.y - player.colliderSize.height)
    SETTINGS.clampCamera()
 end
 
@@ -94,7 +95,9 @@ function love.draw()
       GAME_MAP:drawLayer(GAME_MAP.layers["Solid"])
 
       for _, door in pairs(DOORS) do
+         if door.openTimer > 0 then goto continue end
          door:draw()
+         ::continue::
       end
 
       for _, item in pairs(ITEMS) do

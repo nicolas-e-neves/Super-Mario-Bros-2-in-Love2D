@@ -9,8 +9,8 @@ return {
   height = 15,
   tilewidth = 16,
   tileheight = 16,
-  nextlayerid = 16,
-  nextobjectid = 120,
+  nextlayerid = 17,
+  nextobjectid = 121,
   properties = {},
   tilesets = {
     {
@@ -323,10 +323,10 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 160,
-          y = 176,
+          x = 128,
+          y = 224,
           width = 16,
-          height = 32,
+          height = 16,
           rotation = 0,
           visible = true,
           properties = {
@@ -650,10 +650,42 @@ return {
           x = 128,
           y = 144,
           width = 16,
-          height = 96,
+          height = 112,
           rotation = 0,
           visible = true,
           properties = {}
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 16,
+      name = "ClimbableExit",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 120,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 128,
+          y = 240,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["exit"] = 2,
+            ["map"] = 4
+          }
         }
       }
     },

@@ -21,6 +21,36 @@ function CLIMB.update(player, dt)
       return "grounded"
    end
 
+   --> Checking for exits
+   local colliders = {}
+   if joystick.y ~= 0 then
+      colliders = WORLD:queryRectangleArea(
+         position.x - player.colliderSize.width  / 2,
+         position.y - player.colliderSize.height * ((joystick.y > 0) and 0.5 or 0),
+         player.colliderSize.width,
+         player.colliderSize.height / 2,
+         {"ClimbableExit"}
+      )
+   end
+   if #colliders > 0 then
+      local exit
+      for _, collider in pairs(colliders) do
+         local colliderPosition = VECTOR.new(collider:getPosition())
+         local exitDirection = (colliderPosition.y > 0) and 1 or -1
+         if exitDirection == math.sign(joystick.y) then
+            exit = collider
+            break
+         end
+      end
+      if exit then
+         SETTINGS.map = tonumber(exit.map)
+         SETTINGS.exit = tonumber(exit.exit) -- lol
+         SETTINGS.loadMap()
+         return
+      end
+   end
+
+
    if joystick.y > 0 then
       --> Going down is faster
       joystick.y = joystick.y * DOWN_VELOCITY_MULTIPLIER
@@ -46,8 +76,11 @@ function CLIMB.update(player, dt)
       t = t - dt
 
       if t <= 0 then
+         --> Flip character direction for the climb animation
          t = FRAME_DURATION
          player.horizontal = -player.horizontal
+         
+         AUDIO.climb:play()
       end
    else
       t = 0

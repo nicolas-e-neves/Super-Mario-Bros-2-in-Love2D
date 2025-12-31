@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="80" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="16" nextobjectid="120">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="80" height="15" tilewidth="16" tileheight="16" infinite="0" nextlayerid="17" nextobjectid="121">
  <editorsettings>
   <export target="map5.lua" format="lua"/>
  </editorsettings>
@@ -88,7 +88,7 @@
   </properties>
  </objectgroup>
  <objectgroup id="11" name="Spawn">
-  <object id="118" x="160" y="176" width="16" height="32">
+  <object id="118" x="128" y="224" width="16" height="16">
    <properties>
     <property name="exit" value="1"/>
    </properties>
@@ -162,7 +162,15 @@
   </object>
  </objectgroup>
  <objectgroup id="8" name="Climbable">
-  <object id="106" x="128" y="144" width="16" height="96"/>
+  <object id="106" x="128" y="144" width="16" height="112"/>
+ </objectgroup>
+ <objectgroup id="16" name="ClimbableExit">
+  <object id="120" x="128" y="240" width="16" height="16">
+   <properties>
+    <property name="exit" type="int" value="2"/>
+    <property name="map" type="int" value="4"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="13" name="Mushrooms"/>
  <objectgroup id="15" name="Cherries"/>

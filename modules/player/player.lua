@@ -31,6 +31,9 @@ player.heldItem = nil
 player.targetItem = nil
 player.pickupTimer = 0
 player.throwing = 0
+player.openDoorTimer = 0
+player.openDoorDuration = 48/60
+player.targetDoor = nil
 
 player.health = 2
 player.powerup = "big"
@@ -292,7 +295,7 @@ function player.update(dt)
    So, to get the player's y position (feet position), use player.y
    --]]
    
-   if player.pickupTimer <= 0 and player.state ~= "climb" then
+   if player.pickupTimer <= 0 and player.openDoorTimer <= 0 and player.state ~= "climb" then
       player.horizontal = math.sign(joystick.x, player.horizontal)
       player.vertical = math.sign(joystick.y, player.vertical)
 
@@ -308,6 +311,21 @@ function player.update(dt)
    else
       player.collider:setLinearVelocity(0, 0)
       player.collider:applyForce(0, -GRAVITY)
+
+      if player.openDoorTimer > 0 then
+         player.openDoorTimer = math.max(0, player.openDoorTimer - dt)
+         player.targetDoor:update(dt, player.openDoorDuration)
+
+         if player.openDoorTimer <= 0 then
+            SETTINGS.map = tonumber(player.targetDoor.map)
+            SETTINGS.exit = tonumber(player.targetDoor.exit)
+
+            player.openDoorTimer = 0
+            player.targetDoor = nil
+
+            SETTINGS.loadMap()
+         end return
+      end
    end
 
    --> Detecting colliders
@@ -360,24 +378,7 @@ function player.update(dt)
       player.canClimb = (#colliders > 0)
    end
 
-   local canEnterDoor = false
    if player.onGround then
-      local colliders = WORLD:queryRectangleArea(
-         position.x - player.colliderSize.width  / 2,
-         position.y - player.colliderSize.height / 2,
-         player.colliderSize.width,
-         player.colliderSize.height,
-         {"Door"}
-      )
-      canEnterDoor = (#colliders > 0)
-
-      if CONTROLS.isDown("up", dt) and canEnterDoor then
-         local door = colliders[1].parentDoor
-         SETTINGS.map = tonumber(door.map)
-         SETTINGS.exit = tonumber(door.exit)
-         SETTINGS.loadMap()
-      end
-
       --> Crouching is not a state
       if CONTROLS.isDown("down") and player.state ~= "climb" then
          player.crouching = player.crouching + dt
@@ -449,6 +450,14 @@ function player.draw()
       palette = PALETTES.charge
    end
 
+   --> Draw door shadow if the player is entering one so it appears below the player
+   if player.targetDoor then
+      player.targetDoor:drawShadow()
+      if player.targetDoor.openTimer < DOOR.animation[3] then
+         player.targetDoor:draw()
+      end
+   end
+
    SHADERS.pixelate:send("palette", palette)
    player.animations[player.animationState][player.powerup]:draw(
       player.sprite,
@@ -468,6 +477,11 @@ function player.draw()
       if player.targetItem and player.targetItem.pickedUp then
          player.targetItem:draw()
       end
+   end
+
+   --> Draw door if the player is entering one and the door is fully open so it appears above the player
+   if player.targetDoor and player.openDoorTimer < DOOR.animation[3] then
+      player.targetDoor:draw()
    end
    
 
