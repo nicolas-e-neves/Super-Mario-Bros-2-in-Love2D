@@ -4,5 +4,16 @@
       "player",
       "windfield",
       "anim8"
+   ],
+   "Lua.diagnostics.disable": [
+      "trailing-space",
+      "lowercase-global"
+   ],
+   "Lua.runtime.version": "LuaJIT",
+   "Lua.runtime.special": {
+      "love.filesystem.load": "loadfile"
+   },
+   "Lua.workspace.library": [
+      "${3rd}/love2d/library"
    ]
 }

@@ -8,10 +8,12 @@ WINDOW_X, WINDOW_Y = GAME_X * SETTINGS.scale, GAME_Y * SETTINGS.scale
 
 SETTINGS.fullscreen = true
 SETTINGS.snapping = false
+SETTINGS.showColliders = false
+SETTINGS.timeScale = 1
 
 SETTINGS.world = 1
 SETTINGS.stage = 1
-SETTINGS.map   = 1
+SETTINGS.map   = 2
 SETTINGS.exit  = 1
 
 
@@ -27,8 +29,9 @@ function math.sign(x, default)
    end
 end
 
-function math.round(x)
-   return math.floor(x + 0.5)
+function math.round(x, place)
+   place = 10 ^ (place or 0)
+   return math.floor(x * place + 0.5) / place
 end
 
 function math.clamp(n, min, max)
@@ -41,7 +44,7 @@ end
 
 
 function impulseForHeight(height) --> in tiles
-   return math.sqrt(2 * math.abs(GRAVITY * height * 16))
+   return math.sqrt(2 * math.abs(GRAVITY * player.gravityMultiplier * height * 16))
 end
 
 

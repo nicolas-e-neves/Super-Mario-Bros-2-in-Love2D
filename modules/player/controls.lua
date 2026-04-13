@@ -25,15 +25,21 @@ CONTROLS.actions.run = {}
 CONTROLS.actions.run.value = 0
 CONTROLS.actions.run.keys  = {"lshift", "rshift", "lctrl", "rctrl", "x"}
 
+CONTROLS.actions.pause = {}
+CONTROLS.actions.pause.value = 0
+CONTROLS.actions.pause.keys  = {"escape", "return", "pause"}
+
 --[
 function CONTROLS.updateKeys(dt)
    for control, info in pairs(CONTROLS.actions) do
-      for _, button in pairs(info.keys) do
+      for index, button in pairs(info.keys) do
          if love.keyboard.isDown(button) then
             info.value = info.value + dt
             break
          else
-            info.value = 0
+            if index == #info.keys then
+               info.value = 0
+            end
          end
       end
    end
@@ -68,7 +74,7 @@ function CONTROLS.getJoystick()
       vertical = vertical / magnitude
    end
    
-   return {x = horizontal, y = vertical}
+   return VECTOR.new(horizontal, vertical)
 end
 
 

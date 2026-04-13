@@ -1,3 +1,4 @@
+---@diagnostic disable
 --[[
 The MIT License (MIT)
 

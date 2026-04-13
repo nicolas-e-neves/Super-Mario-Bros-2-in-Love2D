@@ -28,7 +28,9 @@ function GROUNDED.update(player, dt)
          --> Door is too high to enter
          return
       end
-
+      
+      player.collider:setPosition(doorPosition.x, position.y)
+      player.collider:setLinearVelocity(0, 0)
       if door.type ~= 1 then
          SETTINGS.map = tonumber(door.map)
          SETTINGS.exit = tonumber(door.exit)
@@ -40,7 +42,6 @@ function GROUNDED.update(player, dt)
 
       player.targetDoor = door
       player.openDoorTimer = player.openDoorDuration
-      player.collider:setPosition(doorPosition.x, position.y)
       return
    end
 
@@ -58,8 +59,10 @@ function GROUNDED.update(player, dt)
    if player.throwing <= 0 and player.targetItem and CONTROLS.isDown("run", 0.1) then
       return "pickup"
    end
-
-   return
+   
+   if not player.onGround then
+      return "falling"
+   end
 end
 
 
