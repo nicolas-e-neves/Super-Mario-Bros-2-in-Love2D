@@ -224,7 +224,11 @@
   </object>
  </objectgroup>
  <objectgroup id="13" name="Mushrooms">
-  <object id="44" x="64" y="176" width="16" height="16"/>
+  <object id="44" x="144" y="176" width="16" height="16">
+   <properties>
+    <property name="variant" type="int" value="3"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="15" name="Cherries">
   <object id="56" x="560" y="96" width="16" height="16"/>

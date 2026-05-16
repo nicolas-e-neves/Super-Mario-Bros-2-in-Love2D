@@ -31,6 +31,7 @@ local function getFloatForce(player, dt)
 		
 		if totalFloating <= player.floatTime then
 			applyingForce = true
+			player.collider:setLinearVelocity(velocity.x, math.min(velocity.y, VEL_SCALE))
 			return -ACC_SCALE - GRAVITY
 		end
 	end
@@ -60,7 +61,7 @@ function FALLING.update(player, dt)
 		return "grounded"
 	end
 	
-	if player.jumping <= 0 and falling <= COYOTE_TIME and CONTROLS.isDown("jump") then
+	if player.jumping <= 0 and falling <= COYOTE_TIME and CONTROLS.isDown("jump", 0.1) then
 		local velocity = VECTOR.new(player.collider:getLinearVelocity())
 		player.collider:applyLinearImpulse(0, math.min(0, -velocity.y))
 		
@@ -68,6 +69,25 @@ function FALLING.update(player, dt)
 	end
 	
 	player.animations[player.animationState][player.powerup]:update(dt)
+	
+	--> Checking for exits
+	local colliders = {}
+	if player.y > GAME_MAP.height * GAME_MAP.tileheight then
+		colliders = WORLD:queryRectangleArea(
+			player.x - player.colliderSize.width  / 2,
+			player.y - player.getColliderHeight() / 2,
+			player.colliderSize.width * 2,
+			player.getColliderHeight(),
+			{"ClimbableExit"}
+		)
+	end
+	if #colliders > 0 then
+		local exit = colliders[1]
+		SETTINGS.map = tonumber(exit.map)
+		SETTINGS.exit = tonumber(exit.exit)
+		SETTINGS.loadMap()
+		return
+	end
 	
 	counterGravity = GRAVITY * (player.gravityMultiplier - 1)
 	local counterForce = counterGravity

@@ -3,40 +3,28 @@ local CLIMB = {}
 local FRAME_DURATION = 8/60
 local DOWN_VELOCITY_MULTIPLIER = 2
 local SEARCH_HEIGHT = 4
+local DROP_MAX_TIMER = 0.4
+local DROP_TIMER = 0 --> Used to prevent falling off immediately after starting to climb
+
 local lastDirection = 0
 local t = 0
 
 function CLIMB.enter(player, dt)
 	lastDirection = player.horizontal
+	DROP_TIMER = 0
+	
 	player.jumping = 0
+	
+	if player.crouching > 0 then
+		player.crouching = 0
+		player.updateCollider()
+	end
 end
 
 function CLIMB.update(player, dt)
 	local joystick = CONTROLS.getJoystick()
 	local position = VECTOR.new(player.collider:getPosition())
 	lastDirection = math.sign(joystick.x, lastDirection)
-	
-	if joystick.y > 0 then
-		--> Going down is faster
-		joystick.y = joystick.y * DOWN_VELOCITY_MULTIPLIER
-		
-	elseif joystick.y < 0 then
-		--> Stop if there's nothing to climb above
-		local colliders = WORLD:queryRectangleArea(
-			position.x - player.colliderSize.width  / 2,
-			position.y - player.colliderSize.height / 2 - SEARCH_HEIGHT,
-			player.colliderSize.width,
-			SEARCH_HEIGHT,
-			{"Climbable"}
-		)
-		
-		if #colliders <= 0 then
-			joystick.y = 0
-		end
-	end
-	
-	local newVelocity = joystick * player.maxSpeeds.climbing * 16
-	player.collider:setLinearVelocity(newVelocity.x, newVelocity.y)
 	
 	if not player.canClimb then
 		player.horizontal = math.sign(lastDirection, player.horizontal)
@@ -48,9 +36,9 @@ function CLIMB.update(player, dt)
 	if joystick.y ~= 0 then
 		colliders = WORLD:queryRectangleArea(
 			position.x - player.colliderSize.width  / 2,
-			position.y - player.colliderSize.height * ((joystick.y > 0) and 0.5 or 0),
+			position.y + player.getColliderHeight() * ((joystick.y > 0) and -0.75 or 0),
 			player.colliderSize.width,
-			player.colliderSize.height / 2,
+			player.getColliderHeight() * 0.75,
 			{"ClimbableExit"}
 		)
 	end
@@ -66,13 +54,51 @@ function CLIMB.update(player, dt)
 		end
 		if exit then
 			SETTINGS.map = tonumber(exit.map)
-			SETTINGS.exit = tonumber(exit.exit) -- lol
+			SETTINGS.exit = tonumber(exit.exit)
 			SETTINGS.loadMap()
 			return
 		end
 	end
-
-	if CONTROLS.isDown("up") or CONTROLS.isDown("left") or CONTROLS.isDown("right") then -- Going down should not animate
+	
+	if joystick.y > 0 then
+		--> Going down is faster
+		joystick.y = joystick.y * DOWN_VELOCITY_MULTIPLIER
+		
+	elseif joystick.y < 0 then
+		--> Stop if there's nothing to climb above
+		local colliders = WORLD:queryRectangleArea(
+			position.x - player.colliderSize.width  / 2,
+			position.y - player.getColliderHeight() / 2 - SEARCH_HEIGHT,
+			player.colliderSize.width,
+			SEARCH_HEIGHT,
+			{"Climbable"}
+		)
+		
+		if #colliders <= 0 then
+			joystick.y = 0
+		end
+	end
+	
+	DROP_TIMER = DROP_TIMER + dt
+	if DROP_TIMER < DROP_MAX_TIMER and math.abs(joystick.x) > 0 then
+		--> Stop if there's nothing to climb to the sides
+		local colliders = WORLD:queryRectangleArea(
+			position.x - player.colliderSize.width  / 2 + SEARCH_HEIGHT * joystick.x,
+			position.y - player.getColliderHeight() / 2,
+			player.colliderSize.width,
+			SEARCH_HEIGHT,
+			{"Climbable"}
+		)
+		
+		if #colliders <= 0 then
+			joystick.x = 0
+		end
+	end
+	
+	local newVelocity = joystick * player.maxSpeeds.climbing * 16
+	player.collider:setLinearVelocity(newVelocity.x, newVelocity.y)
+	
+	if not ((joystick.y == 0 and joystick.x == 0) or (joystick.y > 0 and joystick.x == 0)) then -- Going down should not animate
 		t = t - dt
 
 		if t <= 0 then
@@ -87,13 +113,13 @@ function CLIMB.update(player, dt)
 	end
 
 	--> Handling jumping
-	if CONTROLS.isDown("jump", 0.1) then
+	if CONTROLS.isDown("jump", 0.1) and joystick.y == 0 then
 		player.horizontal = math.sign(lastDirection, player.horizontal)
-		player.crouching = 0
 		return "jump"
 	end
 
 	if joystick.x == 0 and joystick.y == 0 and player.onGround then
+		player.horizontal = math.sign(lastDirection, player.horizontal)
 		return "grounded"
 	end
 end

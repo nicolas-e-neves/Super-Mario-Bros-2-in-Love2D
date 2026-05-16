@@ -76,6 +76,7 @@ end
 
 
 function DOOR:drawShadow()
+   if not self.collider then return end
    local position = VECTOR.new(self.collider:getPosition())
    
    love.graphics.draw(
@@ -89,6 +90,7 @@ end
 
 
 function DOOR:draw()
+   if not self.collider then return end
    local position = VECTOR.new(self.collider:getPosition())
 
    if self.type ~= 1 then

@@ -13,23 +13,23 @@ function PICKUP.enter(player, dt)
 	PICKUP.item.collider:setType("dynamic")
 	PICKUP.item.pickedUp = true
 	
-	local position = VECTOR.new(player.collider:getPosition())
-	PICKUP.startY = position.y + player.colliderSize.height / 2 + 8
+	PICKUP.startY = player.y + 8
 	PICKUP.item.collider:setPosition(player.x, PICKUP.startY - 6)
-
-
+	
 	AUDIO.pickup:play()
 end
 
 function PICKUP.update(player, dt)
 	player.pickupTimer = math.max(player.pickupTimer - dt, 0)
 	player.crouching = player.crouching + dt
+	if player.crouching == dt then
+		player.updateCollider()
+	end
 
 	local a = 27
 	local t = (0.467 - player.pickupTimer) / 0.467
 	local dy = math.clamp(a * t^2 + 6, 0, 27)
 	
-	local position = VECTOR.new(PICKUP.item.collider:getPosition())
 	PICKUP.item.collider:setPosition(player.x, PICKUP.startY - dy)
 	PICKUP.item.collider:setLinearVelocity(0, 0)
 

@@ -1,19 +1,19 @@
 function love.load()
+	FONT = love.graphics.newFont("Font.ttf", 8)
+	FONT:setFilter("nearest", "nearest")
+	love.graphics.setFont(FONT)
+	love.graphics.setDefaultFilter("nearest")
+	
 	windfield = require("libraries/windfield")
 	anim8 = require("libraries/anim8")
+	VECTOR = require("libraries/vector")
 	CONTROLS = require("modules/player/controls")
 	STI = require("libraries/sti")
 	SETTINGS = require("modules/settings")
 	CAMERA = require("libraries/camera")(0, 0, SETTINGS.scale)
-	VECTOR = require("libraries/vector")
 	AUDIO = require("modules/audio")
 	DOOR = require("modules/door")
 	ITEM = require("modules/items/item")
-	
-	FONT = love.graphics.newFont("Font.ttf", 8)
-	FONT:setFilter("nearest", "nearest")
-	love.graphics.setDefaultFilter("nearest")
-	love.graphics.setFont(FONT)
 	
 	love.physics.setMeter(16)
 	GRAVITY = 60 * 16
@@ -26,13 +26,18 @@ function love.load()
 	WORLD:addCollisionClass("Climbable")
 	WORLD:addCollisionClass("Door")
 	WORLD:addCollisionClass("ClimbableExit")
-	  
-	love.window.setMode(WINDOW_X, WINDOW_Y, {fullscreen = SETTINGS.fullscreen, resizable = true})
+	
+	love.window.setMode(WINDOW_X, WINDOW_Y, {fullscreen = SETTINGS.fullscreen, resizable = true, minwidth = WINDOW_X, minheight = WINDOW_Y})
 	love.window.setTitle("Super Mario Bros. 2 in Love2D")
 	love.window.setIcon(love.image.newImageData("sprites/tiles/items/veggie2.png"))
 	
 	PALETTES = {}
 	PALETTES.charge = love.graphics.newImage("sprites/palettes/character/charge.png")
+	PALETTES.flicker = {
+		love.graphics.newImage("sprites/palettes/character/flicker1.png"),
+		love.graphics.newImage("sprites/palettes/character/flicker2.png"),
+		love.graphics.newImage("sprites/palettes/character/flicker3.png"),
+	}
 	
 	player = require("modules/player/player")
 	SETTINGS.loadMap()
@@ -59,36 +64,55 @@ end
 
 
 function love.update(dt)
-	dt = dt * SETTINGS.timeScale --> Slow down / speed up the game
+	if SETTINGS.timeScale == 0 then
+		CONTROLS.updateKeys(dt)
+		if CONTROLS.isDown("pause", 0.2) then
+			dt = 1/60
+		else
+			dt = dt * SETTINGS.timeScale
+		end
+	else
+		dt = dt * SETTINGS.timeScale --> Slow down / speed up the game
+		CONTROLS.updateKeys(dt)
+	end
 	
 	WINDOW_X, WINDOW_Y = love.window.getMode()
 	GAME_X, GAME_Y = WINDOW_X / SETTINGS.scale, WINDOW_Y / SETTINGS.scale
 	
-	CONTROLS.updateKeys(dt)
 	
 	if GAME_STATE == "playing" then
-		--> Update world and player
-		for _, item in pairs(ITEMS) do
-			item:update(dt)
+		
+		if player.transformationTimer <= 0 then
+			--> Update world and player
+			for _, item in pairs(ITEMS) do
+				item:update(dt)
+			end
+			
+			GAME_MAP:update(dt)
+			player.update(dt)
+			WORLD:update(dt)
+			player.x, player.y = player.collider:getPosition()
+			player.y = player.y + player.getColliderHeight() / 2
+			
+			if player.heldItem and player.heldItem.collider then
+				local offset = (player.crouching <= 0) and player.itemHeights.standing[player.powerup] or player.itemHeights.crouching[player.powerup]
+				player.heldItem.collider:setPosition(player.x, player.y + offset)
+			end
+			
+			SETTINGS.moveCameraToPlayer(dt)
+			
+			if player.state ~= "dead" and player.y > GAME_MAP.height * GAME_MAP.tileheight + SETTINGS.deathZone then
+				player.die()
+			end
+		else
+			player.transform(dt)
 		end
 		
-		GAME_MAP:update(dt)
-		player.update(dt)
-		WORLD:update(dt)
-		player.x, player.y = player.collider:getPosition()
-		player.y = player.y + player.colliderSize.height / 2
-		
-		if player.heldItem and player.heldItem.collider then
-			local offset = (player.crouching <= 0) and player.itemHeightStanding or player.itemHeightCrouching
-			player.heldItem.collider:setPosition(player.x, player.y + offset)
-		end
-		
-		if player.state ~= "dead" and player.y > GAME_MAP.height * GAME_MAP.tileheight + 48 then
-			player.die()
-		end
-
 		--> Handle game state changes
-		if STATE_CHANGE_timer <= 0 and CONTROLS.isDown("pause", dt) then
+		if SETTINGS.timeScale > 0 and STATE_CHANGE_timer <= 0 and CONTROLS.isDown("pause", dt) then
+			AUDIO.pause:stop()
+			AUDIO.pause:play()
+			
 			GAME_STATE = "pause"
 			STATE_CHANGE_timer = STATE_CHANGE_MAX_TIME
 			love.mouse.setPosition(WINDOW_X / 2, WINDOW_Y / 2)
@@ -98,15 +122,17 @@ function love.update(dt)
 
 
 	elseif GAME_STATE == "pause" then
-		if STATE_CHANGE_timer <= 0 and CONTROLS.isDown("pause", dt) then
+		if SETTINGS.timeScale > 0 and STATE_CHANGE_timer <= 0 and CONTROLS.isDown("pause", dt) then
+			AUDIO.pause:stop()
+			AUDIO.pause:play()
+			
 			GAME_STATE = "playing"
 			STATE_CHANGE_timer = STATE_CHANGE_MAX_TIME
 			return
 		end
 		STATE_CHANGE_timer = math.max(0, STATE_CHANGE_timer - dt)
 	end
-
-	CAMERA:lookAt(player.x, player.y - player.colliderSize.height)
+	
 	SETTINGS.clampCamera()
 end
 
@@ -144,11 +170,16 @@ function love.draw()
 		player.draw()
 
 		if SETTINGS.showColliders then
+			love.graphics.setShader()
 			WORLD:draw()
+			love.graphics.setShader(SHADERS.pixelate)
 		end
 	CAMERA:detach()
 
 	love.graphics.scale(SETTINGS.scale, SETTINGS.scale)
+	
+	--SETTINGS.drawCameraDeadZone()
+	
 	for i = 1, player.maxHealth, 1 do
 		love.graphics.draw(
 			(i <= player.health) and SPRITES.ui.health_full or SPRITES.ui.health_empty,
@@ -240,8 +271,11 @@ function love.keypressed(key)
 	if key == "4" then
 		player.setCharacter("peach")
 	end
+	if key == "8" then
+		player.changeHealth(-1)
+	end
 	if key == "9" then
-		player.health = player.health - 1
+		player.changeHealth(1)
 	end
 	if key == "0" then
 		SETTINGS.showColliders = not SETTINGS.showColliders

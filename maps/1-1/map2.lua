@@ -1048,13 +1048,15 @@ return {
           name = "",
           type = "",
           shape = "rectangle",
-          x = 64,
+          x = 144,
           y = 176,
           width = 16,
           height = 16,
           rotation = 0,
           visible = true,
-          properties = {}
+          properties = {
+            ["variant"] = 3
+          }
         }
       }
     },

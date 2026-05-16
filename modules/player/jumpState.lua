@@ -8,9 +8,10 @@ function JUMP.enter(player, dt)
    local velocity = VECTOR.new(player.collider:getLinearVelocity())
    local jumpHeight = (math.abs(velocity.x) == 0) and player.maxJumpHeight or player.runningJumpHeight
    
-   if player.crouching >= player.chargeTime then
+   if player.crouching >= player.chargeTime and not player.isStuck then
       jumpHeight = player.chargedJumpHeight
       player.crouching = 0
+      player.updateCollider()
    end
 
    local impulse = impulseForHeight(jumpHeight)

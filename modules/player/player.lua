@@ -21,12 +21,14 @@ player.extraLives = 2
 player.maxHealth = 2
 player.health = player.maxHealth
 player.powerup = "big"
+player.transformationTimer = 0
 
 player.jumpDone = false
 player.jumping = 0
 player.onGround = true
 player.canClimb = false
 player.crouching = 0
+player.isStuck = false
 
 player.heldItem = nil
 player.targetItem = nil
@@ -41,9 +43,16 @@ player.acceleration = VECTOR.new(0,0)
 
 
 
+function player.getColliderHeight()
+	local height = player.colliderHeights[(player.crouching > 0) and "crouching" or "standing"][player.powerup]
+	player.colliderSize.height = height
+	return height
+end
+
+
 function player.updateCollider(resetPosition)
 	local velocity = VECTOR.new(0, 0)
-
+	
 	if player.collider then
 		local position = VECTOR.new(player.collider:getPosition())
 		player.x = position.x
@@ -53,23 +62,23 @@ function player.updateCollider(resetPosition)
 		player.collider:destroy()
 		player.collider = nil
 	end
-
+	
 	player.collider = WORLD:newRectangleCollider(
 		player.x - player.colliderSize.width / 2,
-		player.y - player.colliderSize.height,
+		player.y - player.getColliderHeight(),
 		player.colliderSize.width,
-		player.colliderSize.height
+		player.getColliderHeight()
 	)
 	player.collider:setFixedRotation(true)
 	player.collider:setCollisionClass("Player")
 	player.collider:setFriction(0)
 	player.collider:setMass(1)
 	player.collider:setLinearVelocity(velocity.x, velocity.y)
-
+	
 	if resetPosition and GAME_MAP and GAME_MAP.layers["Spawn"] and #GAME_MAP.layers["Spawn"].objects > 0 then
 		SETTINGS.findSpawn()
 	end
-
+	
 	player.collider:setPreSolve(function(collider_1, collider_2, contact)
 		if player.state == "dead" then
 			contact:setEnabled(false)
@@ -86,18 +95,16 @@ function player.updateCollider(resetPosition)
 			if player.state == "climb" then
 				--contact:setEnabled(false)
 			end
-			local px, py = collider_1:getPosition()
-			local ph = player.colliderSize.height
-			local tx, ty = collider_2:getPosition() 
-			local th = 1
+			local _, platformY = collider_2:getPosition() 
+			local platformHeight = 1
 			local bias = 2
-
-			if py + ph/2 - bias > ty - th/2 then contact:setEnabled(false) end
+			
+			if player.y - bias > platformY - platformHeight / 2 then contact:setEnabled(false) end
 			return
 		end
-
+		
 		local cantCollide = (collider_2.parentItem and collider_2.parentItem.pickedUp) or (collider_2.body:getType() == "dynamic")
-
+		
 		if cantCollide and collider_1.collision_class == 'Player' and collider_2.collision_class == 'Item' then
 			contact:setEnabled(false)
 			return
@@ -107,10 +114,12 @@ end
 
 
 function player.createAnimationGrid()
+	if player.grid and player.animations then return end
+	
 	local sheetWidth  = player.sprite:getWidth()
 	local sheetHeight = player.sprite:getHeight()
 
-	player.grid = anim8.newGrid(player.spriteSize.width, player.spriteSize.height, sheetWidth, sheetHeight)
+	player.grid = anim8.newGrid(player.spriteSize.width, player.spriteSize.height, sheetWidth, sheetHeight, 0, 0, 1)
 	player.animationState = "idle"
 	player.animations = {
 		idle = {
@@ -124,8 +133,8 @@ function player.createAnimationGrid()
 		},
 
 		walk = {
-			small = anim8.newAnimation(player.grid('1-2', 1), 0.05),
-			big   = anim8.newAnimation(player.grid('1-2', 2), 0.05)
+			small = anim8.newAnimation(player.grid('1-2', 1), 6.75),
+			big   = anim8.newAnimation(player.grid('1-2', 2), 6.75)
 		},
 
 		walkpickup = {
@@ -133,49 +142,54 @@ function player.createAnimationGrid()
 			big   = anim8.newAnimation(player.grid('3-4', 2), 0.05)
 		},
 		
-		fall = {
-			small = anim8.newAnimation(player.grid('2-2', 1), 1),
-			big   = anim8.newAnimation(player.grid('2-2', 2), 1)
-		},
-
-		fallpickup = {
-			small = anim8.newAnimation(player.grid('4-4', 1), 1),
-			big   = anim8.newAnimation(player.grid('4-4', 2), 1)
-		},
-		
 		jump = {
 			small = anim8.newAnimation(player.grid('5-6', 1), 0.03),
 			big   = anim8.newAnimation(player.grid('5-6', 2), 0.03)
 		},
-
-		climb = {
-			small = anim8.newAnimation(player.grid('7-7', 1), 0.2),
-			big   = anim8.newAnimation(player.grid('7-7', 2), 0.2)
+		
+		jumppickup = {
+			small = anim8.newAnimation(player.grid('7-8', 1), 0.03),
+			big   = anim8.newAnimation(player.grid('7-8', 2), 0.03)
+		},
+		
+		fall = {
+			small = anim8.newAnimation(player.grid('9-10', 1), 0.03),
+			big   = anim8.newAnimation(player.grid('9-10', 2), 0.03)
 		},
 
+		fallpickup = {
+			small = anim8.newAnimation(player.grid('11-12', 1), 0.03),
+			big   = anim8.newAnimation(player.grid('11-12', 2), 0.03)
+		},
+		
 		crouch = {
-			small = anim8.newAnimation(player.grid('8-8', 1), 1),
-			big   = anim8.newAnimation(player.grid('8-8', 2), 1)
+			small = anim8.newAnimation(player.grid('13-13', 1), 1),
+			big   = anim8.newAnimation(player.grid('13-13', 2), 1)
 		},
 
 		crouchpickup = {
-			small = anim8.newAnimation(player.grid('9-9', 1), 1),
-			big   = anim8.newAnimation(player.grid('9-9', 2), 1)
+			small = anim8.newAnimation(player.grid('14-14', 1), 1),
+			big   = anim8.newAnimation(player.grid('14-14', 2), 1)
 		},
 
 		pickup = {
-			small = anim8.newAnimation(player.grid('10-10', 1), 1),
-			big   = anim8.newAnimation(player.grid('10-10', 2), 1)
+			small = anim8.newAnimation(player.grid('15-15', 1), 1),
+			big   = anim8.newAnimation(player.grid('15-15', 2), 1)
 		},
-
+		
 		throw = {
-			small = anim8.newAnimation(player.grid('11-11', 1), 1),
-			big   = anim8.newAnimation(player.grid('11-11', 2), 1)
+			small = anim8.newAnimation(player.grid('16-16', 1), 1),
+			big   = anim8.newAnimation(player.grid('16-16', 2), 1)
 		},
-
+		
+		climb = {
+			small = anim8.newAnimation(player.grid('17-17', 1), 0.2),
+			big   = anim8.newAnimation(player.grid('17-17', 2), 0.2)
+		},
+		
 		dead = {
-			small = anim8.newAnimation(player.grid('12-12', 1), 1),
-			big   = anim8.newAnimation(player.grid('12-12', 1), 1)
+			small = anim8.newAnimation(player.grid('18-18', 1), 1),
+			big   = anim8.newAnimation(player.grid('18-18', 1), 1)
 		}
 	}
 end
@@ -186,22 +200,13 @@ function player.updateAttributes()
 	if not currentAttributes then
 		currentAttributes = playerAttributes["mario"]
 	end
-
-	player.minJumpHeight = currentAttributes.minJumpHeight
-	player.maxJumpHeight = currentAttributes.maxJumpHeight
-	player.runningJumpHeight = currentAttributes.runningJumpHeight
-	player.chargedJumpHeight = currentAttributes.chargedJumpHeight
-	player.chargeTime = currentAttributes.chargeTime
-
+	
+	for attribute, value in pairs(currentAttributes) do
+		player[attribute] = value
+	end
+	
 	player.gravityMultiplier = currentAttributes.gravityMultiplier or 1
 	player.floatTime = currentAttributes.floatTime or 0
-
-	player.itemHeightStanding = currentAttributes.itemHeightStanding
-	player.itemHeightCrouching = currentAttributes.itemHeightCrouching
-
-	player.maxSpeeds = currentAttributes.maxSpeeds
-	player.accelerations = currentAttributes.accelerations
-	player.deaccelerations = currentAttributes.deaccelerations
 end
 
 
@@ -211,20 +216,21 @@ function player.setCharacter(characterName, reset)
 	
 	if reset then
 		player.health = player.maxHealth
-		player.powerup = "big" --> CHANGE THIS LATER
+		player.powerup = (player.health > 1) and "big" or "small"
 		player.state = "grounded"
 	end
 
 	if GAME_MAP then
 		local variant = GAME_MAP.layers["Palette"].properties.character
 		local paletteName = player.character .. "_" .. variant
-		player.palette = love.graphics.newImage("sprites/palettes/character/" .. paletteName .. ".png")
+		PALETTES.player = love.graphics.newImage("sprites/palettes/character/" .. paletteName .. ".png")
+		player.palette = PALETTES.player
 	else
 		player.palette = nil
 	end
-
-	player.updateCollider(reset)
+	
 	player.updateAttributes()
+	player.updateCollider(reset)
 	player.createAnimationGrid()
 end
 
@@ -265,7 +271,7 @@ local function decideAnimationState()
 	end
 
 	if player.jumping > 0 then
-		return "jump"
+		return "jump" .. pickup
 	end
 
 	if player.onGround then
@@ -346,7 +352,7 @@ local function checkFeetCollision()
 
 	local colliders = WORLD:queryRectangleArea(
 		position.x - colliderWidth / 2,
-		position.y + (player.colliderSize.height - colliderHeight) / 2,
+		position.y + (player.getColliderHeight() - colliderHeight) / 2,
 		colliderWidth,
 		colliderHeight,
 		{"Solid", "SemiSolid", "Item"}
@@ -364,7 +370,7 @@ local function checkFeetCollision()
 
 		local itemPosition = VECTOR.new(collider:getPosition())
 		local itemHeight = itemPosition.y + 8
-		local feetHeight = position.y + player.colliderSize.height / 2
+		local feetHeight = position.y + player.getColliderHeight() / 2
 		local difference = math.abs(itemHeight - feetHeight)
 
 		--[[
@@ -385,6 +391,50 @@ local function checkFeetCollision()
 end
 
 
+function player.throwItem(playAudio, addImpulse)
+	if not player.heldItem then return end
+	
+	if player.state ~= "dead" and player.heldItem.droppable then
+		local spaceNeeded = 10
+		local blockers = WORLD:queryRectangleArea(
+			player.x + (player.colliderSize.width + spaceNeeded) / 2 * player.horizontal - spaceNeeded / 2,
+			player.y - player.getColliderHeight(),
+			spaceNeeded,
+			4,
+			{"Solid"}
+		)
+		if #blockers > 0 then return end
+	end
+	
+	playAudio = (playAudio == nil) and true or playAudio
+	addImpulse = (addImpulse == nil) and true or addImpulse
+	
+	player.heldItem.collider:setType("dynamic")
+	player.heldItem.collider:setLinearVelocity(0, 0)
+	
+	local velocity = VECTOR.new(player.collider:getLinearVelocity())
+	if addImpulse and ((not player.heldItem.droppable) or (math.abs(velocity.x) > 0 or math.abs(velocity.y) > 0)) then
+		local throwImpulse = VECTOR.new(360 * player.horizontal, 0) + velocity
+		player.heldItem.collider:applyLinearImpulse(throwImpulse.x, throwImpulse.y)
+	else
+		if player.state ~= "dead" then
+			local itemPosition = VECTOR.new(player.heldItem.collider:getPosition())
+			player.heldItem.collider:setPosition(math.round(itemPosition.x + 16 * player.horizontal), itemPosition.y)
+		end
+	end
+	
+	player.heldItem.pickedUp = false
+	player.heldItem.bounces = 0
+	player.heldItem:thrown()
+	player.heldItem = nil
+	player.throwing = 0.167
+	
+	if playAudio then
+		AUDIO.throw:play()
+	end
+end
+
+
 function player.die()
 	AUDIO.playerdown:play()
 	
@@ -393,8 +443,61 @@ function player.die()
 	player.deadTimer = 3.75
 	player.collider:setLinearVelocity(0, 0)
 	player.collider:applyForce(0, -GRAVITY)
+	
+	player.throwItem(false, false)
+	
+	player.jumping = 0
+	player.pickupTimer = 0
+	player.openDoorTimer = 0
+	
 	player.animationState = "dead"
 	player.animations.dead[player.powerup]:gotoFrame(1)
+end
+
+
+function player.transform(dt)
+	if player.transformationTimer <= 0 then return end
+	
+	local flickerDuration = 32/60 / 6 --> in seconds
+	local paletteFlickerDuration = 4/60 --> in seconds
+	local currentFlickerFrame = math.round((player.transformationTimer % (2 * flickerDuration)) / (2 * flickerDuration))
+	local currentPaletteFlickerFrame = math.floor((player.transformationTimer % (4 * paletteFlickerDuration)) / paletteFlickerDuration)
+	
+	if currentFlickerFrame == 0 then
+		player.powerup = "big"
+	else
+		player.powerup = "small"
+	end
+	
+	if currentPaletteFlickerFrame == 0 then
+		player.palette = PALETTES.player
+	else
+		player.palette = PALETTES.flicker[currentPaletteFlickerFrame]
+	end
+	
+	player.transformationTimer = math.max(0, player.transformationTimer - dt)
+	if player.transformationTimer <= 0 then
+		player.powerup = (player.health <= 1) and "small" or "big"
+		player.palette = PALETTES.player
+		player.updateCollider()
+	end
+end
+
+
+function player.changeHealth(health)
+	player.health = math.clamp(player.health + health, 0, player.maxHealth)
+	
+	if player.health <= 1 and player.powerup == "big" then
+		AUDIO.shrink:play()
+		
+	elseif player.health > 1 and player.powerup == "small" then
+		AUDIO.grow:play()
+	end
+	
+	local newPowerup = (player.health > 1) and "big" or "small"
+	if health ~= 0 and player.health > 0 and newPowerup ~= player.powerup then
+		player.transformationTimer = 32/60
+	end
 end
 
 
@@ -408,7 +511,7 @@ function player.update(dt)
 			player.collider:setLinearVelocity(0, 0)
 			player.collider:applyForce(0, -GRAVITY)
 			
-			if player.y < GAME_MAP.height * GAME_MAP.tileheight + 48 and player.deadTimer - dt <= 3.5 then
+			if player.y < GAME_MAP.height * GAME_MAP.tileheight + SETTINGS.deathZone and player.deadTimer - dt <= 3.5 then
 				player.collider:setLinearVelocity(0, -impulseForHeight(4 + 2/16))
 			end
 		end
@@ -445,67 +548,79 @@ function player.update(dt)
 		local maxSpeedX = CONTROLS.isDown("run") and player.maxSpeeds.running or player.maxSpeeds.walking
 		maxSpeedX = maxSpeedX * 16
 		local newVelocityX = math.clamp(velocity.x + atx, -maxSpeedX, maxSpeedX)
-	
+		
 		player.collider:applyLinearImpulse(newVelocityX - velocity.x, 0)
 	else
 		doorEnterLogic(dt)
 	end
-
+	
 	--> Detecting colliders
 	player.onGround = false
-
+	
 	if velocity.y == 0 and player.pickupTimer <= 0 then
 		checkFeetCollision()
 	end
-
+	
 	player.canClimb = false
-	if not player.heldItem then
+	if (not player.heldItem) and not(player.state ~= "climb" and not (CONTROLS.isDown("up") or CONTROLS.isDown("down"))) then
 		local colliders = WORLD:queryRectangleArea(
 			position.x - player.colliderSize.width  / 2,
-			position.y - player.colliderSize.height / 2,
+			position.y - player.getColliderHeight() / 2,
 			player.colliderSize.width,
-			player.colliderSize.height / 2,
+			player.getColliderHeight() / 2,
 			{"Climbable"}
 		)
 
 		player.canClimb = (#colliders > 0)
 	end
-
+	
 	if player.onGround then
 		--> Crouching is not a state
-		if CONTROLS.isDown("down") and player.state ~= "climb" then
+		if player.openDoorTimer <= 0 and CONTROLS.isDown("down") and player.state ~= "climb" then
 			player.crouching = player.crouching + dt
+			if player.crouching == dt then
+				player.updateCollider()
+			end
 		else
-			player.crouching = 0
+			player.isStuck = false
+			
+			if player.crouching > 0 then
+				--> Check for ceilings when trying to uncrouch to prevent the player from getting stuck in them
+				local searchHeight = 4
+				local ceilings = WORLD:queryRectangleArea(
+					position.x - player.colliderSize.width  / 2,
+					position.y - player.getColliderHeight() / 2 - searchHeight,
+					player.colliderSize.width,
+					searchHeight,
+					{"Solid"}
+				)
+				player.isStuck = (#ceilings > 0)
+			end
+			
+			if player.isStuck then
+				player.crouching = player.crouching + dt
+				if player.crouching == dt then
+					player.updateCollider()
+				end
+			else
+				if player.crouching > 0 then
+					player.crouching = 0
+					player.updateCollider()
+				end
+				player.crouching = 0
+			end
 		end
 	else
 		--> Prevent the player from charging in the air
 		player.crouching = math.clamp(player.crouching, 0, dt)
-
+		
 		limitFallingVelocity()
 	end
-
+	
 	--> Handling throwing items
 	player.throwing = math.max(0, player.throwing - dt)
-	if player.heldItem and CONTROLS.isDown("run", 0.1) then
-		player.heldItem.collider:setType("dynamic")
-		player.heldItem.collider:setLinearVelocity(0, 0)
-
-		if (not player.heldItem.droppable) or (math.abs(velocity.x) > 0 or math.abs(velocity.y) > 0) then
-			local throwImpulse = 352 --> CHANGE THIS LATER
-			player.heldItem.collider:applyLinearImpulse(throwImpulse * player.horizontal + velocity.x, velocity.y) --> TODO: calculate impulse for throwing
-		else
-			local itemPosition = VECTOR.new(player.heldItem.collider:getPosition())
-			player.heldItem.collider:setPosition(itemPosition.x + 16 * player.horizontal, itemPosition.y)
-		end
-		
-		player.heldItem.pickedUp = false
-		player.heldItem.bounces = 0
-		player.heldItem:thrown()
-		player.heldItem = nil
-		player.throwing = 0.167
-
-		AUDIO.throw:play()
+	if player.openDoorTimer <= 0 and player.heldItem and CONTROLS.isDown("run", 0.1) then
+		player.throwItem()
 	end
 	
 	local newState = states[player.state].update(player, dt)
@@ -562,7 +677,8 @@ function player.draw()
 		--> Draw target item if there is one and it's being picked up
 		if player.targetItem and player.targetItem.pickedUp then
 			if player.targetItem.collider.collisionOff then --> Probably picking up grass
-				love.graphics.setScissor(0, 0, WINDOW_X, (player.y + 1) * SETTINGS.scale)
+				local _, height = love.graphics.transformPoint(0, player.y)
+				love.graphics.setScissor(0, 0, WINDOW_X, height)
 			end
 			
 			player.targetItem:draw()
@@ -600,9 +716,9 @@ function player.draw()
 	--> Show the value of something
 	--[[
 	love.graphics.printf(
-		tostring(math.round(player.jumping, 2)),
-		player.x - 32, player.y - player.colliderSize.height / 2 - 28,
-		64, "center"
+		tostring(player.powerup),
+		player.x - 64, player.y - player.getColliderHeight() / 2 - 28,
+		128, "center"
 	)
 	--]]
 
